@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:picture_compression/login.dart';
 import 'package:picture_compression/main.dart';
+import 'package:picture_compression/prof.dart';
 
 import 'basic.dart';
 
@@ -75,7 +76,7 @@ class Selection extends StatelessWidget {
                   Navigator.push(
                       context,
                       CupertinoPageRoute(
-                          builder: (BuildContext context) => Login()));
+                          builder: (BuildContext context) => ProffesionalCompress()));
                 },
                 child: Container(
                   height: 45.0,
