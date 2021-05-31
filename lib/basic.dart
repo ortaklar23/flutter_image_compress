@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:picture_compression/main.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -131,6 +132,7 @@ class _BasicState extends State<Basic> {
       aspectRatio: CropAspectRatio(ratioX: 1.0, ratioY: 1.0),
       maxWidth: 800,
     );
+<<<<<<< HEAD
 
     var result = await FlutterImageCompress.compressAndGetFile(
       croppedImage.path,
@@ -139,10 +141,31 @@ class _BasicState extends State<Basic> {
     );
 
     if (croppedImage != null) {
+=======
+    Directory dir = await getTemporaryDirectory();
+    print(dir.absolute.path);
+    final targetPath = dir.absolute.path + "/temp.jpg";
+    testCompressAndGetFile(cropedImage, targetPath);
+    if (cropedImage != null) {
+>>>>>>> 39fd9053d16f66336725959fe9c1173531621233
       setState(() {
         _image = result;
       });
     }
+  }
+
+  Future<File> testCompressAndGetFile(File file, String targetPath) async {
+    var result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      quality: 88,
+      rotate: 180,
+    );
+
+    print(file.lengthSync());
+    print(result.lengthSync());
+
+    return result;
   }
 
   void loadSelected(ImageSource source) async {
