@@ -126,14 +126,21 @@ class _BasicState extends State<Basic> {
   }
 
   void _cropImage(File image) async {
-    File cropedImage = await ImageCropper.cropImage(
+    File croppedImage = await ImageCropper.cropImage(
       sourcePath: image.path,
       aspectRatio: CropAspectRatio(ratioX: 1.0, ratioY: 1.0),
       maxWidth: 800,
     );
-    if (cropedImage != null) {
+
+    var result = await FlutterImageCompress.compressAndGetFile(
+      croppedImage.path,
+      croppedImage.path,
+      quality: 70,
+    );
+
+    if (croppedImage != null) {
       setState(() {
-        _image = cropedImage;
+        _image = result;
       });
     }
   }
