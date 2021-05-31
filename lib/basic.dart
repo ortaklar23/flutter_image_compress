@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:picture_compression/main.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,6 +16,10 @@ class Basic extends StatefulWidget {
 
 class _BasicState extends State<Basic> {
   File _image;
+  ImageStatus imageStatus = ImageStatus.ANY;
+
+  Uint8List compressedImage;
+  double quality = 10;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,7 +81,9 @@ class _BasicState extends State<Basic> {
                 height: 18.0,
               ),
               InkWell(
-                onTap: () {},
+                onTap: () {
+                  downloadImage();
+                },
                 child: Container(
                   height: 45.0,
                   width: 260.0,
@@ -99,6 +107,52 @@ class _BasicState extends State<Basic> {
         ),
       ),
       floatingActionButton: BilgiAlButonu(),
+    );
+  }
+
+  InkWell buildInkWellButton(BuildContext context,
+      {String text, Function onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 45.0,
+        width: 260.0,
+        decoration: BoxDecoration(
+          color: Colors.red[700],
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Center buildCircleAvatar() {
+    return Center(
+      child: CircleAvatar(
+        child: _image == null ? Text("Fotoğraf") : null,
+        radius: 90.0,
+        backgroundColor: Colors.orange[600],
+        backgroundImage: _image != null ? FileImage(_image) : null,
+      ),
+    );
+  }
+
+  Text buildTextButton({String buttonText}) {
+    return Text(
+      buttonText,
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
     );
   }
 
@@ -126,46 +180,44 @@ class _BasicState extends State<Basic> {
             ));
   }
 
+  Future<Uint8List> compressAndGetFile(File file) async {
+    print("testCompressAndGetFile");
+    final result = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      quality: 80,
+      minWidth: 1024,
+      minHeight: 1024,
+      rotate: 0,
+    );
+    print('on compresed');
+    print(file.lengthSync());
+    print(result.length);
+    setState(() {
+      imageStatus = ImageStatus.COMPRESSED;
+      compressedImage = result;
+    });
+    return result;
+  }
+
   void _cropImage(File image) async {
-    File croppedImage = await ImageCropper.cropImage(
+    File cropedImage = await ImageCropper.cropImage(
       sourcePath: image.path,
       aspectRatio: CropAspectRatio(ratioX: 1.0, ratioY: 1.0),
       maxWidth: 800,
     );
-<<<<<<< HEAD
-
-    var result = await FlutterImageCompress.compressAndGetFile(
-      croppedImage.path,
-      croppedImage.path,
-      quality: 70,
-    );
-
-    if (croppedImage != null) {
-=======
-    Directory dir = await getTemporaryDirectory();
-    print(dir.absolute.path);
-    final targetPath = dir.absolute.path + "/temp.jpg";
-    testCompressAndGetFile(cropedImage, targetPath);
+    /*     Directory dir = await getTemporaryDirectory();
+                      print(dir.absolute.path);
+                      final targetPath = dir.absolute.path + "/temp.jpg";
+                      testCompressAndGetFile(cropedImage, targetPath); */
     if (cropedImage != null) {
->>>>>>> 39fd9053d16f66336725959fe9c1173531621233
       setState(() {
-        _image = result;
+        _image = cropedImage;
       });
     }
-  }
-
-  Future<File> testCompressAndGetFile(File file, String targetPath) async {
-    var result = await FlutterImageCompress.compressAndGetFile(
-      file.absolute.path,
-      targetPath,
-      quality: 88,
-      rotate: 180,
-    );
-
-    print(file.lengthSync());
-    print(result.lengthSync());
-
-    return result;
+    compressAndGetFile(cropedImage);
+    print('  on croped');
+    print(cropedImage.lengthSync());
+    print(cropedImage.absolute.path);
   }
 
   void loadSelected(ImageSource source) async {
@@ -175,8 +227,42 @@ class _BasicState extends State<Basic> {
       if (selected != null) {
         // _image = File(selected.path);
         _cropImage(File(selected.path));
+        imageStatus = ImageStatus.UPLOAD;
       }
     });
     Navigator.pop(context);
   }
+
+  Future<bool> _requestPermission(Permission permission) async {
+    if (await permission.isGranted) {
+      return true;
+    } else {
+      var result = await permission.request();
+      if (result == PermissionStatus.granted) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  _save() async {
+    if (await _requestPermission(Permission.storage)) {
+      print(compressedImage);
+      final result = await ImageGallerySaver.saveImage(
+        compressedImage,
+        quality: quality.toInt(),
+        name: "compressedImage",
+      );
+      print('Saved');
+
+      print(result);
+    }
+  }
+
+  void downloadImage() async {
+    _save();
+  }
 }
+
+enum ImageStatus { ANY, UPLOAD, COMPRESSED, DOWNLOADED }
